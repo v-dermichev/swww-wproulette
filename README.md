@@ -24,9 +24,23 @@ cargo build --release
 cp target/release/wproulette ~/.local/bin/
 ```
 
+### Arch/Artix
+
+```sh
+# Install dependencies
+pacman -S swww
+
+# Build and install
+git clone https://github.com/v-dermichev/swww-wproulette
+cd swww-wproulette
+cargo build --release
+sudo cp target/release/wproulette /usr/local/bin/
+```
+
 ### Dependencies
 
 - [swww](https://github.com/LGFae/swww) — wallpaper daemon (must be running)
+- Rust toolchain (for building from source)
 
 ## Usage
 
