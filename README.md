@@ -126,7 +126,10 @@ Starred wallpapers cannot be trashed — unstar first.
 
 ## State
 
-- `~/.local/share/wproulette/current` — current wallpaper path
-- `~/.local/share/wproulette/starred` — starred wallpaper list
-- `~/.local/share/wproulette/trash_manifest` — trash recovery manifest
+All state is stored alongside the config in `~/.config/wproulette/`:
+
+- `config.toml` — configuration
+- `current` — current wallpaper path
+- `starred` — starred wallpaper list
+- `trash_manifest` — trash recovery manifest
 - `<wallpaper_dir>/.trash/` — trashed files with preserved structure

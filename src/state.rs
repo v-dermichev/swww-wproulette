@@ -10,8 +10,8 @@ pub struct State {
 
 impl State {
     pub fn new(wallpaper_dir: &Path) -> Self {
-        let data_dir = dirs::data_dir()
-            .unwrap_or_else(|| PathBuf::from("~/.local/share"))
+        let data_dir = dirs::config_dir()
+            .unwrap_or_else(|| PathBuf::from("~/.config"))
             .join("wproulette");
         let trash_dir = wallpaper_dir.join(".trash");
         fs::create_dir_all(&data_dir).ok();
