@@ -137,8 +137,8 @@ fn cmd_status(config: &Config, state: &State, module: StatusModule) {
             let class = if is_starred { "starred" } else { "unstarred" };
             let tooltip = if is_starred { "Starred" } else { "Not starred" };
             println!(
-                r#"{{"text": "{}", "tooltip": "{}", "class": "{}"}}"#,
-                config.badge, tooltip, class
+                r#"{{"text": "󰓎", "tooltip": "{}", "class": "{}"}}"#,
+                tooltip, class
             );
         }
         StatusModule::Trash => {
