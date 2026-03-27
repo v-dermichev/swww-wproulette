@@ -9,8 +9,6 @@ pub struct Config {
     pub transition_type: String,
     #[serde(default = "default_transition_duration")]
     pub transition_duration: f32,
-    #[serde(default = "default_badge")]
-    pub badge: String,
 }
 
 fn default_wallpaper_dir() -> PathBuf {
@@ -18,7 +16,6 @@ fn default_wallpaper_dir() -> PathBuf {
 }
 fn default_transition_type() -> String { "fade".into() }
 fn default_transition_duration() -> f32 { 1.0 }
-fn default_badge() -> String { "●".into() }
 
 impl Default for Config {
     fn default() -> Self {
@@ -26,7 +23,6 @@ impl Default for Config {
             wallpaper_dir: default_wallpaper_dir(),
             transition_type: default_transition_type(),
             transition_duration: default_transition_duration(),
-            badge: default_badge(),
         }
     }
 }

@@ -107,10 +107,9 @@ Config file at `~/.config/wproulette/config.toml`:
 wallpaper_dir = "~/Pictures/Wallpapers"
 transition_type = "fade"
 transition_duration = 1.0
-badge = "●"
 ```
 
-All fields are optional — defaults are shown above.
+All fields are optional — defaults are shown above. Tilde (`~`) is expanded automatically.
 
 ## How Trash Works
 
