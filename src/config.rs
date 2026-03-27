@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -31,6 +31,16 @@ impl Default for Config {
     }
 }
 
+fn expand_tilde(path: &Path) -> PathBuf {
+    let s = path.to_string_lossy();
+    if s.starts_with("~/") {
+        if let Some(home) = dirs::home_dir() {
+            return home.join(&s[2..]);
+        }
+    }
+    path.to_path_buf()
+}
+
 impl Config {
     pub fn load() -> Self {
         let config_path = dirs::config_dir()
@@ -39,7 +49,9 @@ impl Config {
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path).unwrap_or_default();
-            toml::from_str(&content).unwrap_or_default()
+            let mut config: Self = toml::from_str(&content).unwrap_or_default();
+            config.wallpaper_dir = expand_tilde(&config.wallpaper_dir);
+            config
         } else {
             Self::default()
         }
