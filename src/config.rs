@@ -9,6 +9,24 @@ pub struct Config {
     pub transition_type: String,
     #[serde(default = "default_transition_duration")]
     pub transition_duration: f32,
+    #[serde(default)]
+    pub icons: Icons,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Icons {
+    #[serde(default = "default_star_active")]
+    pub star_active: String,
+    #[serde(default = "default_star_inactive")]
+    pub star_inactive: String,
+    #[serde(default = "default_trash_active")]
+    pub trash_active: String,
+    #[serde(default = "default_trash_inactive")]
+    pub trash_inactive: String,
+    #[serde(default = "default_random")]
+    pub random: String,
+    #[serde(default = "default_starred")]
+    pub starred: String,
 }
 
 fn default_wallpaper_dir() -> PathBuf {
@@ -16,6 +34,25 @@ fn default_wallpaper_dir() -> PathBuf {
 }
 fn default_transition_type() -> String { "fade".into() }
 fn default_transition_duration() -> f32 { 1.0 }
+fn default_star_active() -> String { "󰓎".into() }
+fn default_star_inactive() -> String { "󰓎".into() }
+fn default_trash_active() -> String { "󰩹".into() }
+fn default_trash_inactive() -> String { "󰩹".into() }
+fn default_random() -> String { "󰒟󰋩".into() }
+fn default_starred() -> String { "󰒟󰓎".into() }
+
+impl Default for Icons {
+    fn default() -> Self {
+        Self {
+            star_active: default_star_active(),
+            star_inactive: default_star_inactive(),
+            trash_active: default_trash_active(),
+            trash_inactive: default_trash_inactive(),
+            random: default_random(),
+            starred: default_starred(),
+        }
+    }
+}
 
 impl Default for Config {
     fn default() -> Self {
@@ -23,6 +60,7 @@ impl Default for Config {
             wallpaper_dir: default_wallpaper_dir(),
             transition_type: default_transition_type(),
             transition_duration: default_transition_duration(),
+            icons: Icons::default(),
         }
     }
 }

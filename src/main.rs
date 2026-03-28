@@ -134,23 +134,26 @@ fn cmd_status(config: &Config, state: &State, module: StatusModule) {
     match module {
         StatusModule::Star => {
             let is_starred = current.as_ref().is_some_and(|p| state.is_starred(p));
-            let class = if is_starred { "starred" } else { "unstarred" };
-            let tooltip = if is_starred { "Starred" } else { "Not starred" };
+            let (icon, class, tooltip) = if is_starred {
+                (&config.icons.star_active, "starred", "Starred")
+            } else {
+                (&config.icons.star_inactive, "unstarred", "Not starred")
+            };
             println!(
-                r#"{{"text": "󰓎", "tooltip": "{}", "class": "{}"}}"#,
-                tooltip, class
+                r#"{{"text": "{}", "tooltip": "{}", "class": "{}"}}"#,
+                icon, tooltip, class
             );
         }
         StatusModule::Trash => {
             let is_starred = current.as_ref().is_some_and(|p| state.is_starred(p));
-            let (tooltip, class) = if is_starred {
-                ("Unstar first to trash", "disabled")
+            let (icon, tooltip, class) = if is_starred {
+                (&config.icons.trash_inactive, "Unstar first to trash", "disabled")
             } else {
-                ("Trash wallpaper", "enabled")
+                (&config.icons.trash_active, "Trash wallpaper", "enabled")
             };
             println!(
-                r#"{{"text": "󰩹", "tooltip": "{}", "class": "{}"}}"#,
-                tooltip, class
+                r#"{{"text": "{}", "tooltip": "{}", "class": "{}"}}"#,
+                icon, tooltip, class
             );
         }
     }

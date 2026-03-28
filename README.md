@@ -107,9 +107,19 @@ Config file at `~/.config/wproulette/config.toml`:
 wallpaper_dir = "~/Pictures/Wallpapers"
 transition_type = "fade"
 transition_duration = 1.0
+
+[icons]
+star_active = "󰓎"
+star_inactive = "󰓎"
+trash_active = "󰩹"
+trash_inactive = "󰩹"
+random = "󰒟󰋩"
+starred = "󰒟󰓎"
 ```
 
 All fields are optional — defaults are shown above. Tilde (`~`) is expanded automatically.
+
+Icons are used in waybar JSON status output and can be any string (nerd font glyphs, emoji, text).
 
 ## How Trash Works
 
