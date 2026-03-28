@@ -99,9 +99,9 @@ impl State {
         self.starred().contains(path)
     }
 
-    pub fn toggle_star(&self, path: &Path) -> bool {
+    pub fn toggle_star(&self, path: &Path) -> Result<bool, String> {
         let starred_path = self.starred_path();
-        let _lock = FileLock::acquire(&starred_path);
+        let _lock = FileLock::acquire(&starred_path)?;
 
         let mut starred = self.starred();
         let was_starred = starred.contains(path);
@@ -111,7 +111,7 @@ impl State {
             starred.insert(path.to_path_buf());
         }
         Self::write_path_list(&starred_path, &starred);
-        !was_starred
+        Ok(!was_starred)
     }
 
     fn write_path_list(file: &Path, paths: &HashSet<PathBuf>) {
@@ -196,7 +196,7 @@ impl State {
 
         // Remove from starred if present
         let starred_path = self.starred_path();
-        let _lock = FileLock::acquire(&starred_path);
+        let _lock = FileLock::acquire(&starred_path).map_err(|e| e.to_string())?;
         let mut starred = self.starred();
         if starred.remove(path) {
             Self::write_path_list(&starred_path, &starred);
@@ -324,11 +324,11 @@ mod tests {
 
         assert!(!state.is_starred(&path));
 
-        let starred = state.toggle_star(&path);
+        let starred = state.toggle_star(&path).unwrap();
         assert!(starred);
         assert!(state.is_starred(&path));
 
-        let unstarred = state.toggle_star(&path);
+        let unstarred = state.toggle_star(&path).unwrap();
         assert!(!unstarred);
         assert!(!state.is_starred(&path));
     }
@@ -370,7 +370,7 @@ mod tests {
     fn test_cannot_trash_starred() {
         let (_dir, state) = setup_test_dir();
         let path = state.wallpaper_dir.join("a.png");
-        state.toggle_star(&path);
+        state.toggle_star(&path).unwrap();
 
         // Trash should fail — but our state doesn't enforce this,
         // the main.rs checks is_starred before calling trash.

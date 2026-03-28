@@ -93,11 +93,13 @@ fn cmd_star(_config: &Config, state: &State) {
         eprintln!("No current wallpaper");
         std::process::exit(1);
     };
-    let is_starred = state.toggle_star(&current);
-    if is_starred {
-        println!("Starred: {}", current.display());
-    } else {
-        println!("Unstarred: {}", current.display());
+    match state.toggle_star(&current) {
+        Ok(true) => println!("Starred: {}", current.display()),
+        Ok(false) => println!("Unstarred: {}", current.display()),
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
     }
 }
 
@@ -185,5 +187,11 @@ fn cmd_list_trashed(state: &State, n: usize) {
 }
 
 fn cmd_config(config: &Config) {
-    println!("{}", toml::to_string_pretty(config).unwrap());
+    match toml::to_string_pretty(config) {
+        Ok(s) => println!("{}", s),
+        Err(e) => {
+            eprintln!("Error serializing config: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
