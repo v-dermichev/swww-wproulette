@@ -161,12 +161,14 @@ Icons are used in waybar JSON status output and can be any string (nerd font gly
 When you trash a wallpaper:
 
 1. The file is moved to `.trash/` inside your wallpaper directory
-2. Subdirectory structure is preserved (e.g. `minimal/abstract/file.png` → `.trash/minimal/abstract/file.<hash>.png`)
-3. A content hash is appended to the filename to handle duplicates
-4. The original path is recorded in a manifest for recovery
+2. Subdirectory structure is preserved (e.g. `minimal/abstract/file.png` → `.trash/minimal/abstract/file.<sha256>.png`)
+3. A full SHA256 content hash is appended to the filename to handle duplicates
+4. The original path is recorded in a tab-delimited manifest for recovery
 5. `wproulette restore` moves it back to the exact original location
 
-Starred wallpapers cannot be trashed — unstar first.
+The operation is crash-safe: the file is moved first, then the manifest is updated. If a crash occurs between steps, the file is in `.trash/` but untracked — recoverable by inspection.
+
+Starred wallpapers cannot be trashed — unstar first. Concurrent access is protected by file locks.
 
 ## State
 
