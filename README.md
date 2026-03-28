@@ -99,6 +99,41 @@ Add these modules to your waybar config:
 }
 ```
 
+Recommended CSS for `style.css`:
+
+```css
+/* Wallpaper roulette controls */
+#custom-wallpaper-random,
+#custom-wallpaper-starred,
+#custom-wallpaper-star,
+#custom-wallpaper-trash {
+    padding: 0 10px;
+    box-shadow: inset 0 -3px transparent;
+    transition-property: background, box-shadow;
+    transition-duration: 300ms;
+}
+
+#custom-wallpaper-random:hover,
+#custom-wallpaper-starred:hover,
+#custom-wallpaper-star:hover,
+#custom-wallpaper-trash:hover {
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 -3px #ffffff;
+}
+
+/* Starred random button — golden tint */
+#custom-wallpaper-random,
+#custom-wallpaper-starred { letter-spacing: 4px; }
+#custom-wallpaper-starred { color: #d4a84b; }
+
+/* Star states */
+#custom-wallpaper-star.unstarred { color: rgba(255, 255, 255, 0.3); }
+#custom-wallpaper-star.starred { color: #d4a84b; }
+
+/* Trash disabled when starred */
+#custom-wallpaper-trash.disabled { color: rgba(255, 255, 255, 0.25); }
+```
+
 ## Config
 
 Config file at `~/.config/wproulette/config.toml`:
