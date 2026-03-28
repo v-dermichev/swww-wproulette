@@ -139,10 +139,9 @@ fn cmd_status(config: &Config, state: &State, module: StatusModule) {
             } else {
                 (&config.icons.star_inactive, "unstarred", "Not starred")
             };
-            println!(
-                r#"{{"text": "{}", "tooltip": "{}", "class": "{}"}}"#,
-                icon, tooltip, class
-            );
+            println!("{}", serde_json::json!({
+                "text": icon, "tooltip": tooltip, "class": class
+            }));
         }
         StatusModule::Trash => {
             let is_starred = current.as_ref().is_some_and(|p| state.is_starred(p));
@@ -151,10 +150,9 @@ fn cmd_status(config: &Config, state: &State, module: StatusModule) {
             } else {
                 (&config.icons.trash_active, "Trash wallpaper", "enabled")
             };
-            println!(
-                r#"{{"text": "{}", "tooltip": "{}", "class": "{}"}}"#,
-                icon, tooltip, class
-            );
+            println!("{}", serde_json::json!({
+                "text": icon, "tooltip": tooltip, "class": class
+            }));
         }
     }
 }
