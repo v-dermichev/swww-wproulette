@@ -56,7 +56,10 @@ enum StatusModule {
 fn main() {
     let cli = Cli::parse();
     let config = Config::load();
-    let state = State::new(&config.wallpaper_dir);
+    let state = State::new(&config.wallpaper_dir).unwrap_or_else(|e| {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    });
 
     match cli.command {
         Commands::Random => cmd_random(&config, &state, false),

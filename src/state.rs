@@ -1,5 +1,5 @@
 use sha2::{Digest, Sha256};
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -12,7 +12,6 @@ struct FileLock {
 impl FileLock {
     fn acquire(path: &Path) -> Result<Self, String> {
         let lock_path = path.with_extension("lock");
-        // Spin briefly if locked
         for _ in 0..50 {
             match fs::OpenOptions::new()
                 .write(true)
@@ -36,6 +35,7 @@ impl Drop for FileLock {
 /// Manifest uses tab as delimiter — tabs are invalid in filenames on most filesystems.
 const MANIFEST_DELIMITER: char = '\t';
 
+#[derive(Debug)]
 pub struct State {
     data_dir: PathBuf,
     trash_dir: PathBuf,
@@ -43,23 +43,33 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(wallpaper_dir: &Path) -> Self {
+    pub fn new(wallpaper_dir: &Path) -> Result<Self, String> {
         let data_dir = dirs::config_dir()
             .unwrap_or_else(|| {
-                // Fallback: use $HOME/.config or /tmp
                 std::env::var("HOME")
                     .map(|h| PathBuf::from(h).join(".config"))
                     .unwrap_or_else(|_| PathBuf::from("/tmp"))
             })
             .join("wproulette");
+        if !wallpaper_dir.is_dir() {
+            return Err(format!(
+                "Wallpaper directory does not exist: {}\nCheck wallpaper_dir in ~/.config/wproulette/config.toml",
+                wallpaper_dir.display()
+            ));
+        }
+
         let trash_dir = wallpaper_dir.join(".trash");
-        fs::create_dir_all(&data_dir).ok();
-        fs::create_dir_all(&trash_dir).ok();
-        Self {
+
+        fs::create_dir_all(&data_dir)
+            .map_err(|e| format!("Failed to create config dir {}: {}", data_dir.display(), e))?;
+        fs::create_dir_all(&trash_dir)
+            .map_err(|e| format!("Failed to create trash dir {}: {}", trash_dir.display(), e))?;
+
+        Ok(Self {
             data_dir,
             trash_dir,
             wallpaper_dir: wallpaper_dir.to_path_buf(),
-        }
+        })
     }
 
     // Current wallpaper
@@ -77,15 +87,15 @@ impl State {
         );
     }
 
-    // Starred list
+    // Starred list (BTreeSet for deterministic file output)
     fn starred_path(&self) -> PathBuf {
         self.data_dir.join("starred")
     }
 
-    pub fn starred(&self) -> HashSet<PathBuf> {
+    pub fn starred(&self) -> BTreeSet<PathBuf> {
         let path = self.starred_path();
         if !path.exists() {
-            return HashSet::new();
+            return BTreeSet::new();
         }
         fs::read_to_string(&path)
             .unwrap_or_default()
@@ -114,7 +124,7 @@ impl State {
         Ok(!was_starred)
     }
 
-    fn write_path_list(file: &Path, paths: &HashSet<PathBuf>) {
+    fn write_path_list(file: &Path, paths: &BTreeSet<PathBuf>) {
         let content: String = paths
             .iter()
             .map(|p| p.to_string_lossy().to_string())
@@ -131,17 +141,13 @@ impl State {
     fn file_hash(path: &Path) -> String {
         let data = fs::read(path).unwrap_or_default();
         let hash = Sha256::digest(&data);
-        hex::encode(&hash[..8])
+        hex::encode(hash)
     }
 
     /// Compute the relative path of `file` within `wallpaper_dir`.
-    /// Returns just the filename if the file isn't inside wallpaper_dir.
     fn relative_to_wallpaper_dir(&self, file: &Path) -> PathBuf {
         file.strip_prefix(&self.wallpaper_dir)
-            .unwrap_or_else(|_| {
-                // Not inside wallpaper_dir — use filename only
-                Path::new(file.file_name().unwrap_or_default())
-            })
+            .unwrap_or_else(|_| Path::new(file.file_name().unwrap_or_default()))
             .to_path_buf()
     }
 
@@ -152,19 +158,14 @@ impl State {
 
         let relative = self.relative_to_wallpaper_dir(path);
 
-        // Add hash suffix to filename for uniqueness
         let hash = Self::file_hash(path);
-        let stem = path
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy();
+        let stem = path.file_stem().unwrap_or_default().to_string_lossy();
         let ext = path
             .extension()
             .map(|e| format!(".{}", e.to_string_lossy()))
             .unwrap_or_default();
         let trash_name = format!("{}.{}{}", stem, hash, ext);
 
-        // Preserve subdirectory structure
         let trash_subdir = self
             .trash_dir
             .join(relative.parent().unwrap_or(Path::new("")));
@@ -172,7 +173,12 @@ impl State {
 
         let trash_path = trash_subdir.join(&trash_name);
 
-        // Record original path in manifest (tab-delimited, append with lock)
+        // Atomic-ish: move file first, then update manifest.
+        // If crash after move but before manifest write, the file is in trash
+        // but not tracked — recoverable by scanning .trash directory.
+        fs::rename(path, &trash_path).map_err(|e| e.to_string())?;
+
+        // Record in manifest
         let manifest = self.trash_manifest_path();
         let _lock = FileLock::acquire(&manifest).map_err(|e| e.to_string())?;
         let mut file = fs::OpenOptions::new()
@@ -190,9 +196,6 @@ impl State {
         .map_err(|e| e.to_string())?;
         drop(file);
         drop(_lock);
-
-        // Move file
-        fs::rename(path, &trash_path).map_err(|e| e.to_string())?;
 
         // Remove from starred if present
         let starred_path = self.starred_path();
@@ -226,14 +229,12 @@ impl State {
             return Err("Trashed file no longer exists".into());
         }
 
-        // Ensure parent dir exists
         if let Some(parent) = original_path.parent() {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
 
         fs::rename(&trash_path, &original_path).map_err(|e| e.to_string())?;
 
-        // Remove last line from manifest
         let remaining: String = lines[..lines.len() - 1].join("\n");
         fs::write(
             &manifest,
@@ -282,23 +283,23 @@ mod tests {
         let wallpaper_dir = dir.path().join("wallpapers");
         fs::create_dir_all(&wallpaper_dir).unwrap();
 
-        // Create test images
         for name in &["a.png", "b.jpg", "sub/c.png"] {
             let p = wallpaper_dir.join(name);
             fs::create_dir_all(p.parent().unwrap()).unwrap();
             fs::write(&p, format!("fake image {}", name)).unwrap();
         }
 
-        // Override config dir to temp
         let config_dir = dir.path().join("config");
         fs::create_dir_all(&config_dir).unwrap();
 
+        let trash_dir = wallpaper_dir.join(".trash");
+        fs::create_dir_all(&trash_dir).unwrap();
+
         let state = State {
             data_dir: config_dir,
-            trash_dir: wallpaper_dir.join(".trash"),
+            trash_dir,
             wallpaper_dir: wallpaper_dir.clone(),
         };
-        fs::create_dir_all(&state.trash_dir).unwrap();
 
         (dir, state)
     }
@@ -334,6 +335,21 @@ mod tests {
     }
 
     #[test]
+    fn test_starred_order_is_deterministic() {
+        let (_dir, state) = setup_test_dir();
+        let a = state.wallpaper_dir.join("a.png");
+        let b = state.wallpaper_dir.join("b.jpg");
+
+        state.toggle_star(&b).unwrap();
+        state.toggle_star(&a).unwrap();
+
+        // BTreeSet should always write in sorted order
+        let content = fs::read_to_string(state.starred_path()).unwrap();
+        let lines: Vec<&str> = content.lines().collect();
+        assert!(lines[0] < lines[1], "starred list should be sorted");
+    }
+
+    #[test]
     fn test_trash_and_restore() {
         let (_dir, state) = setup_test_dir();
         let path = state.wallpaper_dir.join("a.png");
@@ -341,7 +357,6 @@ mod tests {
 
         state.trash(&path).unwrap();
         assert!(!path.exists());
-        // Trash dir should have files
         assert!(state.trash_dir.read_dir().unwrap().count() > 0);
 
         let entries = state.trashed_entries(10);
@@ -361,22 +376,27 @@ mod tests {
         state.trash(&path).unwrap();
         assert!(!path.exists());
 
-        // Check trash has sub/ directory
         let sub_trash = state.trash_dir.join("sub");
         assert!(sub_trash.exists());
     }
 
     #[test]
-    fn test_cannot_trash_starred() {
+    fn test_trash_removes_from_starred() {
         let (_dir, state) = setup_test_dir();
         let path = state.wallpaper_dir.join("a.png");
         state.toggle_star(&path).unwrap();
 
-        // Trash should fail — but our state doesn't enforce this,
-        // the main.rs checks is_starred before calling trash.
-        // Verify starred is removed after trash.
         state.trash(&path).unwrap();
         assert!(!state.is_starred(&path));
+    }
+
+    #[test]
+    fn test_full_hash_length() {
+        let (_dir, state) = setup_test_dir();
+        let path = state.wallpaper_dir.join("a.png");
+        let hash = State::file_hash(&path);
+        // Full SHA256 = 64 hex chars
+        assert_eq!(hash.len(), 64);
     }
 
     #[test]
@@ -398,7 +418,6 @@ mod tests {
     #[test]
     fn test_manifest_with_special_chars() {
         let (_dir, state) = setup_test_dir();
-        // Create file with spaces in name
         let path = state.wallpaper_dir.join("my wallpaper (1).png");
         fs::write(&path, "fake").unwrap();
 
@@ -410,5 +429,16 @@ mod tests {
         let restored = state.restore_last().unwrap();
         assert_eq!(restored, path);
         assert!(path.exists());
+    }
+
+    #[test]
+    fn test_invalid_wallpaper_dir() {
+        // Use a path that exists but is a file, not a directory
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("not_a_dir");
+        fs::write(&fake, "not a directory").unwrap();
+        let result = State::new(&fake);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
     }
 }
