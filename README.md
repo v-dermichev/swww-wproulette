@@ -76,12 +76,12 @@ Add these modules to your waybar config:
 "custom/wallpaper-random": {
     "format": "󰒟󰋩",
     "tooltip-format": "Random wallpaper",
-    "on-click": "wproulette random"
+    "on-click": "wproulette random; pkill -RTMIN+11 waybar"
 },
 "custom/wallpaper-starred": {
     "format": "󰒟󰓎",
     "tooltip-format": "Random from starred",
-    "on-click": "wproulette starred"
+    "on-click": "wproulette starred; pkill -RTMIN+11 waybar"
 },
 "custom/wallpaper-star": {
     "exec": "wproulette status star",
