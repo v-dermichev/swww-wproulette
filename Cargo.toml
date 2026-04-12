@@ -2,7 +2,7 @@
 name = "wproulette"
 version = "0.1.0"
 edition = "2024"
-description = "Wallpaper roulette — browse, star, trash, and rotate wallpapers with swww"
+description = "Wallpaper roulette — browse, star, trash, and rotate wallpapers with awww"
 license = "MIT"
 
 [dependencies]

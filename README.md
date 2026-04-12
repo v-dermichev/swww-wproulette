@@ -1,6 +1,6 @@
 # wproulette
 
-Wallpaper roulette CLI for [swww](https://github.com/LGFae/swww) — browse, star, trash, and rotate wallpapers from your terminal or waybar.
+Wallpaper roulette CLI for [awww](https://codeberg.org/LGFae/awww) — browse, star, trash, and rotate wallpapers from your terminal or waybar.
 
 ## Features
 
@@ -28,18 +28,18 @@ cp target/release/wproulette ~/.local/bin/
 
 ```sh
 # Install dependencies
-pacman -S swww
+pacman -S awww
 
 # Build and install
-git clone https://github.com/v-dermichev/swww-wproulette
-cd swww-wproulette
+git clone https://github.com/v-dermichev/awww-wproulette
+cd awww-wproulette
 cargo build --release
 sudo cp target/release/wproulette /usr/local/bin/
 ```
 
 ### Dependencies
 
-- [swww](https://github.com/LGFae/swww) — wallpaper daemon (must be running)
+- [awww](https://codeberg.org/LGFae/awww) — wallpaper daemon (must be running)
 - Rust toolchain (for building from source)
 
 ## Usage

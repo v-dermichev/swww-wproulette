@@ -49,7 +49,7 @@ pub fn pick_random(config: &Config, state: &State, starred_only: bool) -> Option
 }
 
 pub fn apply(path: &Path, config: &Config) -> Result<(), String> {
-    let status = std::process::Command::new("swww")
+    let status = std::process::Command::new("awww")
         .arg("img")
         .arg(path)
         .arg("--transition-type")
@@ -57,11 +57,11 @@ pub fn apply(path: &Path, config: &Config) -> Result<(), String> {
         .arg("--transition-duration")
         .arg(config.transition_duration.to_string())
         .status()
-        .map_err(|e| format!("Failed to run swww: {}", e))?;
+        .map_err(|e| format!("Failed to run awww: {}", e))?;
 
     if status.success() {
         Ok(())
     } else {
-        Err("swww failed".into())
+        Err("awww failed".into())
     }
 }
