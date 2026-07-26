@@ -5,7 +5,7 @@ use walkdir::WalkDir;
 use crate::config::Config;
 use crate::state::State;
 
-const EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "bmp"];
+const EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp", "bmp", "gif"];
 
 fn is_image(path: &Path) -> bool {
     path.extension()
